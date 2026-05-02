@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Simulador de Dengue | BIOFISQUI - Ciências da Natureza</title>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #e6f7f0 0%, #c8e6df 100%);
+            color: #1a3a2f;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            background: white;
+            border-radius: 48px;
+            padding: 24px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 12px 28px rgba(0, 32, 16, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(120deg, #0f4c3a, #2e7d64);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e67e22;
+            color: white;
+            border-radius: 60px;
+            padding: 6px 18px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin: 12px 0 8px;
+        }
+
+        .subtitulo {
+            color: #2c5a46;
+            font-weight: 500;
+        }
+
+        /* Cards e grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 28px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+            border: 1px solid #cfe9e1;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: #0f4c3a;
+            border-left: 6px solid #e67e22;
+            padding-left: 14px;
+        }
+
+        .card h4 {
+            font-size: 1.1rem;
+            margin: 16px 0 8px;
+            color: #2b7a62;
+        }
+
+        /* Sliders e controles */
+        .slider-group {
+            margin: 18px 0;
+        }
+
+        label {
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #d0e2db;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e67e22;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .valor-slider {
+            font-weight: bold;
+            font-size: 1rem;
+            background: #f0f5f2;
+            padding: 4px 12px;
+            border-radius: 24px;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        /* Indicador de risco */
+        .risco-box {
+            background: #fef4e8;
+            border-radius: 32px;
+            padding: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .alerta {
+            padding: 14px;
+            border-radius: 24px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 16px 0;
+        }
+
+        .alerta-critico {
+            background: #ffebee;
+            border-left: 8px solid #c0392b;
+            color: #b03a2e;
+        }
+
+        .alerta-alto {
+            background: #fff3e0;
+            border-left: 8px solid #e67e22;
+            color: #a45d13;
+        }
+
+        .alerta-moderado {
+            background: #fffde7;
+            border-left: 8px solid #f1c40f;
+            color: #7d6608;
+        }
+
+        .alerta-baixo {
+            background: #e0f2f1;
+            border-left: 8px solid #2e7d64;
+            color: #1b5e4d;
+        }
+
+        /* Gráficos */
+        canvas {
+            max-height: 260px;
+            width: 100% !important;
+            margin: 12px 0;
+        }
+
+        /* Tabelas e destaques */
+        .destaque-info {
+            background: #e9f5f0;
+            border-radius: 20px;
+            padding: 14px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .legenda-cores {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin: 16px 0 8px;
+            justify-content: center;
+        }
+
+        .legenda {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+
+        .cor {
+            width: 18px;
+            height: 18px;
+            border-radius: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 0.75rem;
+            color: #2e6b58;
+            border-top: 1px solid #bcd9cf;
+            margin-top: 40px;
+        }
+
+        .btn-simular {
+            background: #0f4c3a;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 36px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-simular:hover {
+            background: #e67e22;
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 680px) {
+            .grid-2 { gap: 16px; }
+            .card h3 { font-size: 1.3rem; }
+            body { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="badge">🔬 BIOFISQUI 2026 | CIÊNCIAS DA NATUREZA</div>
+        <h1>🦟 Simulador de Dengue 🧪</h1>
+        <p class="subtitulo">Modelagem matemática do Aedes aegypti • Fatores ambientais • Alerta epidemiológico</p>
+    </div>
+
+    <!-- PRIMEIRA LINHA: CONTROLES CLIMÁTICOS + RISCO -->
+    <div class="grid-2">
+        <!-- CARD 1: Fatores ambientais -->
+        <div class="card">
+            <h3>🌡️ Fatores Ambientais</h3>
+            <div class="slider-group">
+                <label>🌞 Temperatura média (°C) <span id="tempVal">28.0</span></label>
+                <input type="range" id="temperatura" min="18" max="38" step="0.5" value="28">
+            </div>
+            <div class="slider-group">
+                <label>💧 Índice pluviométrico (mm/mês) <span id="chuvaVal">120</span></label>
+                <input type="range" id="chuva" min="0" max="400" step="5" value="120">
+            </div>
+            <div class="slider-group">
+                <label>🗑️ Acúmulo de lixo / criadouros (%) <span id="lixoVal">35</span></label>
+                <input type="range" id="lixo" min="0" max="100" step="5" value="35">
+            </div>
+            <div class="destaque-info">
+                🌍 <strong>Base científica:</strong> A reprodução do Aedes aegypti acelera entre 25°C e 32°C, chuvas acumulam água parada e resíduos sólidos servem de criadouro.
+            </div>
+        </div>
+
+        <!-- CARD 2: Risco de surto -->
+        <div class="card">
+            <h3>⚠️ Nível de Risco (Município)</h3>
+            <div class="risco-box" id="riscoBox">
+                <div id="indicadorTexto" class="alerta alerta-moderado">🔍 Selecionando parâmetros...</div>
+                <div id="detalheRisco" style="margin-top:12px; font-weight:500;"></div>
+                <div id="porcentagemRisco"></div>
+            </div>
+            <div class="legenda-cores">
+                <div class="legenda"><div class="cor" style="background:#c0392b;"></div> Crítico</div>
+                <div class="legenda"><div class="cor" style="background:#e67e22;"></div> Alto</div>
+                <div class="legenda"><div class="cor" style="background:#f1c40f;"></div> Moderado</div>
+                <div class="legenda"><div class="cor" style="background:#2e7d64;"></div> Baixo</div>
+            </div>
+            <button class="btn-simular" id="btnAlerta">📢 Gerar Alerta Comunitário</button>
+            <div id="alertaComunitario" class="destaque-info" style="margin-top:12px;"></div>
+        </div>
+    </div>
+
+    <!-- SEGUNDA LINHA: PROJEÇÃO DE CASOS + CICLO BIOLÓGICO -->
+    <div class="grid-2">
+        <div class="card">
+            <h3>📈 Projeção de Casos (próximos 3 meses)</h3>
+            <canvas id="graficoCasos" width="400" height="220" style="max-height:220px;"></canvas>
+            <div class="destaque-info">
+                📉 <strong>Modelo preditivo simplificado:</strong> reprodução do vetor + temperatura + chuvas + condições sanitárias.
+            </div>
+        </div>
+        <div class="card">
+            <h3>🧬 Ciclo Biológico do Aedes</h3>
+            <canvas id="graficoOvoAdulto" width="400" height="200" style="max-height:200px;"></canvas>
+            <div class="destaque-info">
+                🥚 Ovo → Larva → Pupa → Adulto. Condições ideais encurtam ciclo para 7 dias.
+            </div>
+        </div>
+    </div>
+
+    <!-- TERCEIRA LINHA: INTERVENÇÃO SOCIAL E PREVENÇÃO -->
+    <div class="card">
+        <h3>🏥 Medidas de Prevenção (Impacto Social)</h3>
+        <div class="grid-2" style="margin-bottom:0;">
+            <div>
+                <div class="slider-group">
+                    <label>🧹 Coleta seletiva / mutirão de limpeza (%) <span id="prevVal">30</span></label>
+                    <input type="range" id="prevencao" min="0" max="100" step="5" value="30">
+                </div>
+                <div class="slider-group">
+                    <label>🦟 Uso de larvicidas / fumacê (%) <span id="larvVal">20</span></label>
+                    <input type="range" id="larvicida" min="0" max="100" step="5" value="20">
+                </div>
+            </div>
+            <div class="destaque-info">
+                💡 <strong>Impacto direto na comunidade:</strong> cada 10% de aumento na prevenção reduz o risco de surto em até 18% segundo dados da OPAS (Organização Pan-Americana da Saúde).
+            </div>
+        </div>
+        <div id="reducaoImpacto" class="alerta alerta-baixo" style="margin-top:6px;">✅ Com as ações atuais, o risco é reduzido em XX%.</div>
+    </div>
+
+    <footer>
+        🌍 Baseado em dados epidemiológicos do Ministério da Saúde, OMS e modelagem matemática de dinâmica populacional do Aedes aegypti. 
+        Projeto de Ciências da Natureza | BIOFISQUI - IFSul Câmpus Pelotas
+    </footer>
+</div>
+
+<script>
+    // ------------------- REFERÊNCIAS DOM -------------------
+    const tempSlider = document.getElementById('temperatura');
+    const chuvaSlider = document.getElementById('chuva');
+    const lixoSlder = document.getElementById('lixo');
+    const prevSlider = document.getElementById('prevencao');
+    const larvSlider = document.getElementById('larvicida');
+    
+    const tempVal = document.getElementById('tempVal');
+    const chuvaVal = document.getElementById('chuvaVal');
+    const lixoVal = document.getElementById('lixoVal');
+    const prevVal = document.getElementById('prevVal');
+    const larvVal = document.getElementById('larvVal');
+
+    const indicadorTexto = document.getElementById('indicadorTexto');
+    const detalheRisco = document.getElementById('detalheRisco');
+    const porcentagemRiscoSpan = document.getElementById('porcentagemRisco');
+    const alertaComunitarioDiv = document.getElementById('alertaComunitario');
+    const reducaoImpactoDiv = document.getElementById('reducaoImpacto');
+    
+    let graficoCasos, graficoOvoAdulto;
+
+    // ------------------- FUNÇÃO PRINCIPAL DE RISCO -------------------
+    function calcularRisco(Dados) {
+        // fatores puros (0 a 1)
+        let temp = Dados.temperatura;
+        let chuva = Dados.chuva;
+        let lixo = Dados.lixo / 100;
+        let prevencao = Dados.prevencao / 100;
+        let larvicida = Dados.larvicida / 100;
+    
+        // Curva de temperatura ideal (ótimo entre 26 e 32)
+        let fTemp = 0;
+        if (temp >= 24 && temp <= 34) {
+            if (temp <= 29) fTemp = 0.7 + (temp - 24) * 0.1;
+            else fTemp = 1.2 - (temp - 29) * 0.07;
+            fTemp = Math.min(1.0, Math.max(0.4, fTemp));
+        } else {
+            fTemp = 0.2;
+        }
+        
+        // Chuva: mais de 100mm acumula água
+        let fChuva = Math.min(1.0, chuva / 250);
+        
+        // Lixo é criadouro direto
+        let fLixo = lixo;
+        
+        // Prevenção reduz o risco (até 70% de redução)
+        let eficienciaPrev = prevencao * 0.7;
+        let eficienciaLarv = larvicida * 0.5;
+        let fatorReducao = 1 - (eficienciaPrev + eficienciaLarv);
+        if (fatorReducao < 0.2) fatorReducao = 0.2;
+        
+        // Risco bruto (multiplicativo)
+        let riscoRaw = (fTemp * 0.5 + fChuva * 0.3 + fLixo * 0.2) * 100;
+        let riscoFinal = riscoRaw * fatorReducao;
+        riscoFinal = Math.min(100, Math.max(0, riscoFinal));
+        
+        // Classificação do risco
+        let nivel = '';
+        let classe = '';
+        if (riscoFinal >= 75) { nivel = '🔴 CRÍTICO'; classe = 'alerta-critico'; }
+        else if (riscoFinal >= 50) { nivel = '🟠 ALTO'; classe = 'alerta-alto'; }
+        else if (riscoFinal >= 25) { nivel = '🟡 MODERADO'; classe = 'alerta-moderado'; }
+        else { nivel = '🟢 BAIXO'; classe = 'alerta-baixo'; }
+        
+        return { riscoFinal, nivel, classe, fTemp, fChuva, fLixo, fatorReducao };
+    }
+    
+    // Projeção de casos futuros (3 meses)
+    function projetarCasos(riscoBase, prevencao, larvicida) {
+        let meses = ['Mês 1', 'Mês 2', 'Mês 3'];
+        let casos = [];
+        let efetividade = 1 - ((prevencao/100)*0.6 + (larvicida/100)*0.4);
+        let base = riscoBase / 10; // escala
+        for (let i = 0; i < 3; i++) {
+            let evolucao = base * (1 + i*0.25) * efetividade;
+            casos.push(Math.floor(evolucao * 12 + 5));
+        }
+        return casos;
+    }
+    
+    // Ciclo biológico (dias de desenvolvimento)
+    function calcularCiclo(temperatura) {
+        let diasOvo = 5, diasLarva = 6, diasPupa = 2, total = 13;
+        if (temperatura >= 26 && temperatura <= 32) {
+            diasOvo = 2; diasLarva = 3; diasPupa = 1; total = 6;
+        } else if (temperatura >= 22 && temperatura < 26) {
+            diasOvo = 4; diasLarva = 5; diasPupa = 2; total = 11;
+        } else if (temperatura < 20) {
+            diasOvo = 12; diasLarva = 15; diasPupa = 6; total = 33;
+        }
+        return { diasOvo, diasLarva, diasPupa, total };
+    }
+    
+    // Atualizar TUDO
+    function atualizarSimulacao() {
+        let temp = parseFloat(tempSlider.value);
+        let chuva = parseFloat(chuvaSlider.value);
+        let lixo = parseFloat(lixoSlder.value);
+        let prevencao = parseFloat(prevSlider.value);
+        let larvicida = parseFloat(larvSlider.value);
+        
+        tempVal.innerText = temp.toFixed(1);
+        chuvaVal.innerText = chuva;
+        lixoVal.innerText = lixo;
+        prevVal.innerText = prevencao;
+        larvVal.innerText = larvicida;
+        
+        let dados = { temperatura: temp, chuva, lixo, prevencao, larvicida };
+        let { riscoFinal, nivel, classe, fatorReducao } = calcularRisco(dados);
+        
+        indicadorTexto.className = `alerta ${classe}`;
+        indicadorTexto.innerHTML = `⚠️ Nível de risco: ${nivel} (${Math.round(riscoFinal)}%)`;
+        detalheRisco.innerHTML = `🌧️ Fator chuva: ${(dados.chuva/250*100).toFixed(0)}% • 🗑️ Criadouros: ${dados.lixo}% • 🌡️ Temperatura: ${dados.temperatura}°C`;
+        porcentagemRiscoSpan.innerHTML = `<div class="destaque-info">📊 Probabilidade de surto: ${Math.round(riscoFinal)}%</div>`;
+        
+        // Projeção e gráfico
+        let casosProj = projetarCasos(riscoFinal, prevencao, larvicida);
+        if (graficoCasos) {
+            graficoCasos.data.datasets[0].data = casosProj;
+            graficoCasos.update();
+        }
+        
+        // Ciclo biológico
+        let ciclo = calcularCiclo(temp);
+        if (graficoOvoAdulto) {
+            graficoOvoAdulto.data.datasets[0].data = [ciclo.diasOvo, ciclo.diasLarva, ciclo.diasPupa];
+            graficoOvoAdulto.update();
+        }
+        
+        // Redução de impacto
+        let reducao = (1 - fatorReducao) * 100;
+        reducaoImpactoDiv.innerHTML = `🧹 <strong>Eficácia das medidas preventivas:</strong> ${Math.round(reducao)}% de redução no risco. ${reducao > 50 ? 'Ótimo! Comunidade protegida.' : 'Ainda há risco elevado; aumente mutirões e larvicidas.'}`;
+        
+        // Alerta comunitário ativo no botão
+        document.getElementById('btnAlerta').onclick = () => {
+            let msg = `🚨 ALERTA DA COMUNIDADE: nível ${nivel} (${Math.round(riscoFinal)}% de risco). `;
+            if (riscoFinal >= 50) msg += `Medidas urgentes: elimine água parada, use telas e participe do mutirão. Evite criadouros!`;
+            else if (riscoFinal >= 25) msg += `Fique atento(a)! Verifique calhas, ralos e quintais. Previna-se contra a dengue.`;
+            else msg += `Situação controlada, mas mantenha hábitos de limpeza e inspeção semanal.`;
+            alertaComunitarioDiv.innerHTML = `📢 ${msg}`;
+        };
+    }
+    
+    // Inicializar gráficos
+    function initGraficos() {
+        const ctxCasos = document.getElementById('graficoCasos').getContext('2d');
+        graficoCasos = new Chart(ctxCasos, {
+            type: 'bar',
+            data: {
+                labels: ['Mês 1', 'Mês 2', 'Mês 3'],
+                datasets: [{
+                    label: 'Casos projetados (por 100 mil hab)',
+                    data: [12, 18, 24],
+                    backgroundColor: '#e67e22',
+                    borderRadius: 12
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+        });
+        
+        const ctxCiclo = document.getElementById('graficoOvoAdulto').getContext('2d');
+        graficoOvoAdulto = new Chart(ctxCiclo, {
+            type: 'bar',
+            data: {
+                labels: ['Ovo', 'Larva', 'Pupa'],
+                datasets: [{
+                    label: 'Duração média (dias)',
+                    data: [5, 6, 2],
+                    backgroundColor: '#2e7d64',
+                    borderRadius: 12
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+    
+    // Eventos
+    function bindSliders() {
+        const sliders = [tempSlider, chuvaSlider, lixoSlder, prevSlider, larvSlider];
+        sliders.forEach(sl => sl.addEventListener('input', atualizarSimulacao));
+    }
+    
+    window.onload = () => {
+        initGraficos();
+        bindSliders();
+        atualizarSimulacao();
+    };
+</script>
+</body>
+</html>
