@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>SIMULADOR DENGUE | BIOFISQUI - Pelotas/RS</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #eef7f2 0%, #d0eade 100%);
+            color: #153e2f;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        /* CONTAINER FLUIDO */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* CABEÇALHO */
+        .header {
+            text-align: center;
+            background: white;
+            border-radius: 2rem;
+            padding: 1.6rem 1rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 12px 28px rgba(0, 32, 16, 0.08);
+            transition: all 0.2s;
+        }
+
+        .header h1 {
+            font-size: clamp(1.5rem, 6vw, 2.2rem);
+            background: linear-gradient(120deg, #0f4c3a, #2e7d64);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .badge {
+            background: #e67e22;
+            color: white;
+            border-radius: 60px;
+            padding: 0.3rem 1.2rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+            margin: 0.5rem 0;
+        }
+
+        .subtitulo {
+            color: #2c5a46;
+            font-size: clamp(0.8rem, 4vw, 1rem);
+        }
+
+        /* GRID RESPONSIVO */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.4rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.15s ease;
+            border: 1px solid #cfe1d8;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
+            font-size: clamp(1.2rem, 5vw, 1.5rem);
+            margin-bottom: 0.8rem;
+            color: #0f4c3a;
+            border-left: 5px solid #e67e22;
+            padding-left: 0.8rem;
+        }
+
+        /* SLIDERS */
+        .slider-group {
+            margin: 1rem 0;
+        }
+
+        label {
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cfe1d8;
+            border-radius: 10px;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #e67e22;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+        }
+
+        .valor-slider {
+            background: #f0f5f2;
+            padding: 4px 12px;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* ALERTA E RISCO */
+        .risco-box {
+            background: #fef6ed;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin: 1.2rem 0;
+        }
+
+        .alerta {
+            padding: 0.9rem;
+            border-radius: 1.8rem;
+            font-weight: bold;
+            font-size: clamp(0.9rem, 4vw, 1.1rem);
+            margin: 0.8rem 0;
+        }
+
+        .alerta-critico { background: #ffebee; border-left: 6px solid #c0392b; color: #b03a2e; }
+        .alerta-alto { background: #fff3e0; border-left: 6px solid #e67e22; color: #a45d13; }
+        .alerta-moderado { background: #fffde7; border-left: 6px solid #f1c40f; color: #7d6608; }
+        .alerta-baixo { background: #e0f2f1; border-left: 6px solid #2e7d64; color: #1b5e4d; }
+
+        .legenda-cores {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .legenda {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+        }
+        .cor {
+            width: 18px;
+            height: 18px;
+            border-radius: 10px;
+        }
+
+        .btn {
+            background: #0f4c3a;
+            border: none;
+            color: white;
+            padding: 0.7rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 0.9rem;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .btn:hover {
+            background: #e67e22;
+            transform: scale(0.98);
+        }
+
+        canvas {
+            max-height: 240px;
+            width: 100% !important;
+            margin: 0.5rem 0;
+        }
+
+        .destaque-info {
+            background: #eef5f1;
+            border-radius: 1.2rem;
+            padding: 0.9rem;
+            font-size: 0.85rem;
+            margin: 0.8rem 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.7rem;
+            color: #2b6b55;
+            border-top: 1px solid #bcd9cf;
+            margin-top: 2rem;
+        }
+
+        /* RESPONSIVIDADE EXTRA */
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+            .card {
+                padding: 1rem;
+            }
+            .btn {
+                font-size: 0.8rem;
+                padding: 0.6rem;
+            }
+            .header {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="badge">🦟 BIOFISQUI 2026 | PELOTAS - RS</div>
+        <h1>🌡️ Simulador de Dengue</h1>
+        <p class="subtitulo">Modelagem matemática do Aedes aegypti • Dados reais de abril/2026 • Prevenção comunitária</p>
+    </div>
+
+    <!-- SEÇÃO 1: FATORES AMBIENTAIS + RISCO -->
+    <div class="grid-2">
+        <div class="card">
+            <h3>🌿 Fatores Ambientais (Abril - Pelotas)</h3>
+            <div class="slider-group">
+                <label>🌡️ Temperatura média (°C) <span id="tempVal">26.5</span></label>
+                <input type="range" id="temperatura" min="16" max="36" step="0.5" value="26.5">
+                <div class="valor-slider">Ideal para proliferação: 25°C – 32°C</div>
+            </div>
+            <div class="slider-group">
+                <label>💧 Índice pluviométrico (mm/mês) <span id="chuvaVal">145</span></label>
+                <input type="range" id="chuva" min="0" max="400" step="5" value="145">
+                <div class="valor-slider">Outono chuvoso → acúmulo de água</div>
+            </div>
+            <div class="slider-group">
+                <label>🗑️ Criadouros / focos do Aedes (%) <span id="lixoVal">64</span></label>
+                <input type="range" id="lixo" min="0" max="100" step="5" value="64">
+                <div class="valor-slider">📍 1.611 focos em Pelotas (abril/2026)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚠️ Nível de Risco (Município)</h3>
+            <div class="risco-box">
+                <div id="indicadorTexto" class="alerta alerta-moderado">🔍 Simulando Pelotas...</div>
+                <div id="detalheRisco" style="margin: 8px 0;"></div>
+                <div id="porcentagemRisco"></div>
+            </div>
+            <div class="legenda-cores">
+                <div class="legenda"><div class="cor" style="background:#c0392b;"></div> Crítico</div>
+                <div class="legenda"><div class="cor" style="background:#e67e22;"></div> Alto</div>
+                <div class="legenda"><div class="cor" style="background:#f1c40f;"></div> Moderado</div>
+                <div class="legenda"><div class="cor" style="background:#2e7d64;"></div> Baixo</div>
+            </div>
+            <button class="btn" id="btnAlerta">📢 Gerar Alerta Comunitário (Pelotas)</button>
+            <div id="alertaComunitario" class="destaque-info" style="margin-top: 12px;"></div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2 : PROJEÇÃO DE CASOS + CICLO BIOLÓGICO -->
+    <div class="grid-2">
+        <div class="card">
+            <h3>📈 Projeção de Casos (próximos 3 meses)</h3>
+            <canvas id="graficoCasos" width="400" height="200"></canvas>
+            <div class="destaque-info">📉 Baseado em temperatura + focos + ações comunitárias.</div>
+        </div>
+        <div class="card">
+            <h3>🧬 Ciclo Biológico do Aedes</h3>
+            <canvas id="graficoOvoAdulto" width="400" height="200"></canvas>
+            <div class="destaque-info">🥚 Ovo → Larva → Pupa → Adulto (dias). Clima quente acelera o ciclo.</div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 3 : INTERVENÇÃO SOCIAL (PREVENÇÃO) -->
+    <div class="card">
+        <h3>🏥 Medidas de Prevenção (Impacto Social)</h3>
+        <div class="grid-2" style="margin-bottom: 0;">
+            <div>
+                <div class="slider-group">
+                    <label>🧹 Mutirões / coleta seletiva (%) <span id="prevVal">38</span></label>
+                    <input type="range" id="prevencao" min="0" max="100" step="5" value="38">
+                </div>
+                <div class="slider-group">
+                    <label>🦟 Uso de larvicidas / fumacê (%) <span id="larvVal">22</span></label>
+                    <input type="range" id="larvicida" min="0" max="100" step="5" value="22">
+                </div>
+            </div>
+            <div class="destaque-info">
+                💡 <strong>Prefeitura em ação:</strong> Força-tarefa no bairro Três Vendas (551 focos). Ações reduzem risco em até 70%.
+            </div>
+        </div>
+        <div id="reducaoImpacto" class="alerta alerta-baixo" style="margin-top: 8px;">✅ Com as ações atuais, o risco cai X%.</div>
+    </div>
+
+    <footer>
+        🌍 Dados referenciais: SINAN - 16/04/2026 | Focos: 1.611 | Casos confirmados: 8 (2026) | Bairros mais críticos: Três Vendas, Fragata, Centro.<br>
+        🔬 Projeto de Ciências da Natureza | BIOFISQUI – IFSul Câmpus Pelotas
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // DOM ELEMENTOS
+        const tempSlider = document.getElementById('temperatura');
+        const chuvaSlider = document.getElementById('chuva');
+        const lixoSlider = document.getElementById('lixo');
+        const prevSlider = document.getElementById('prevencao');
+        const larvSlider = document.getElementById('larvicida');
+        
+        const tempVal = document.getElementById('tempVal');
+        const chuvaVal = document.getElementById('chuvaVal');
+        const lixoVal = document.getElementById('lixoVal');
+        const prevVal = document.getElementById('prevVal');
+        const larvVal = document.getElementById('larvVal');
+        
+        const indicadorTexto = document.getElementById('indicadorTexto');
+        const detalheRisco = document.getElementById('detalheRisco');
+        const porcentagemDiv = document.getElementById('porcentagemRisco');
+        const alertaComunitarioDiv = document.getElementById('alertaComunitario');
+        const reducaoImpactoDiv = document.getElementById('reducaoImpacto');
+        
+        let graficoCasos, graficoCiclo;
+        
+        // FUNÇÃO PRINCIPAL DE RISCO (MODELO EPIDEMIOLÓGICO)
+        function calcularRisco(dados){
+            let temp = dados.temperatura;
+            let chuva = dados.chuva;
+            let lixo = dados.lixo / 100;
+            let prev = dados.prevencao / 100;
+            let larv = dados.larvicida / 100;
+            
+            // Fator temperatura (ótimo 26-32°C)
+            let fTemp = 0;
+            if(temp >= 24 && temp <= 34){
+                if(temp <= 29) fTemp = 0.7 + (temp-24)*0.1;
+                else fTemp = 1.2 - (temp-29)*0.07;
+                fTemp = Math.min(1.0, Math.max(0.35, fTemp));
+            } else {
+                fTemp = 0.2;
+            }
+            // chuva: acima de 100mm acelera criadouros
+            let fChuva = Math.min(1.0, chuva / 280);
+            let fLixo = lixo;
+            // prevenção reduz risco (máx 70% efetividade nos mutirões, 50% nos larvicidas)
+            let eficienciaPrev = prev * 0.65;
+            let eficienciaLarv = larv * 0.5;
+            let reducao = 1 - (eficienciaPrev + eficienciaLarv);
+            if(reducao < 0.2) reducao = 0.2;
+            if(reducao > 0.98) reducao = 0.98;
+            
+            let riscoRaw = (fTemp * 0.5 + fChuva * 0.3 + fLixo * 0.2) * 100;
+            let riscoFinal = riscoRaw * reducao;
+            riscoFinal = Math.min(100, Math.max(0, riscoFinal));
+            
+            let nivel = '', classe = '';
+            if(riscoFinal >= 75) { nivel = '🔴 CRÍTICO'; classe = 'alerta-critico'; }
+            else if(riscoFinal >= 50) { nivel = '🟠 ALTO'; classe = 'alerta-alto'; }
+            else if(riscoFinal >= 25) { nivel = '🟡 MODERADO'; classe = 'alerta-moderado'; }
+            else { nivel = '🟢 BAIXO'; classe = 'alerta-baixo'; }
+            
+            return { riscoFinal, nivel, classe, reducao, fTemp, fChuva, fLixo };
+        }
+        
+        // Projeção de casos (3 meses)
+        function projetarCasos(riscoBase, prevencao, larvicida){
+            let mesesLabels = ['Mês 1', 'Mês 2', 'Mês 3'];
+            let efetividade = 1 - ((prevencao/100)*0.6 + (larvicida/100)*0.4);
+            let base = riscoBase / 9.5;
+            let casos = [];
+            for(let i=0; i<3; i++){
+                let evol = base * (1 + i*0.28) * efetividade;
+                casos.push(Math.floor(evol * 10 + 3));
+            }
+            return { migracao: casos, labels: mesesLabels };
+        }
+        
+        // Ciclo biológico (dias)
+        function calcularCiclo(temperatura){
+            if(temperatura >= 25 && temperatura <= 33) return { ovo:2, larva:3, pupa:1, total:6 };
+            else if(temperatura >= 21 && temperatura < 25) return { ovo:5, larva:6, pupa:2, total:13 };
+            else return { ovo:9, larva:12, pupa:5, total:26 };
+        }
+        
+        // Atualização COMPLETA da interface
+        function atualizarTudo(){
+            let temp = parseFloat(tempSlider.value);
+            let chuva = parseFloat(chuvaSlider.value);
+            let lixo = parseFloat(lixoSlider.value);
+            let prevencao = parseFloat(prevSlider.value);
+            let larvicida = parseFloat(larvSlider.value);
+            
+            tempVal.innerText = temp.toFixed(1);
+            chuvaVal.innerText = chuva;
+            lixoVal.innerText = lixo;
+            prevVal.innerText = prevencao;
+            larvVal.innerText = larvicida;
+            
+            let dados = { temperatura: temp, chuva, lixo, prevencao, larvicida };
+            let { riscoFinal, nivel, classe, reducao } = calcularRisco(dados);
+            
+            // exibição risco
+            indicadorTexto.className = `alerta ${classe}`;
+            indicadorTexto.innerHTML = `⚠️ Nível de risco: ${nivel} (${Math.round(riscoFinal)}%)`;
+            detalheRisco.innerHTML = `🌧️ Chuva: ${chuva}mm | 🗑️ Focos: ${lixo}% | 🌡️ Temp: ${temp}°C<br>🔎 Focos reais Pelotas: +1.600 → criadouros elevados`;
+            porcentagemDiv.innerHTML = `<div class="destaque-info">📊 Probabilidade de surto: ${Math.round(riscoFinal)}%</div>`;
+            
+            // projeção e gráfico de casos
+            let { migracao } = projetarCasos(riscoFinal, prevencao, larvicida);
+            if(graficoCasos){
+                graficoCasos.data.datasets[0].data = migracao;
+                graficoCasos.update();
+            }
+            
+            // ciclo vetorial
+            let ciclo = calcularCiclo(temp);
+            if(graficoCiclo){
+                graficoCiclo.data.datasets[0].data = [ciclo.ovo, ciclo.larva, ciclo.pupa];
+                graficoCiclo.update();
+            }
+            
+            // redução de impacto
+            let percentualReducao = (1 - reducao) * 100;
+            reducaoImpactoDiv.innerHTML = `🧹 <strong>Eficácia das ações preventivas:</strong> ${Math.round(percentualReducao)}% de redução no risco. ${percentualReducao > 55 ? 'Comunidade mais protegida!' : 'Aumente mutirões e larvicidas para evitar surto.'}`;
+        }
+        
+        // ALERTA COMUNITÁRIO PERSONALIZADO PELOTAS
+        function gerarAlerta(){
+            let temp = parseFloat(tempSlider.value);
+            let lixo = parseFloat(lixoSlider.value);
+            let { riscoFinal, nivel } = calcularRisco({
+                temperatura: temp, chuva: parseFloat(chuvaSlider.value), lixo,
+                prevencao: parseFloat(prevSlider.value), larvicida: parseFloat(larvSlider.value)
+            });
+            let bairrosCriticos = "Três Vendas (551 focos), Fragata (342), Centro (175)";
+            let mensagem = `🚨 ALERTA DENGUE - PELOTAS (ABRIL/2026): Nível ${nivel} (${Math.round(riscoFinal)}% risco). `;
+            if(riscoFinal >= 50){
+                mensagem += `Bairros críticos: ${bairrosCriticos}. Participe do mutirão, elimine água parada e autorize o fumacê. Use repelente!`;
+            } else if(riscoFinal >= 25){
+                mensagem += `Atenção: ainda há focos ativos. Verifique calhas, ralos, lajes. Colabore com a vigilância sanitária.`;
+            } else {
+                mensagem += `Situação sob controle, mas não descuide. Mantenha caixas d'água vedadas e quintais limpos.`;
+            }
+            alertaComunitarioDiv.innerHTML = `📢 ${mensagem}`;
+        }
+        
+        // INICIALIZA GRÁFICOS
+        function initGraficos(){
+            const ctxCasos = document.getElementById('graficoCasos').getContext('2d');
+            graficoCasos = new Chart(ctxCasos, {
+                type: 'bar',
+                data: {
+                    labels: ['Mês 1', 'Mês 2', 'Mês 3'],
+                    datasets: [{ label: 'Casos / 100 mil hab', data: [16, 21, 30], backgroundColor: '#e67e22', borderRadius: 12 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+            });
+            const ctxCiclo = document.getElementById('graficoOvoAdulto').getContext('2d');
+            graficoCiclo = new Chart(ctxCiclo, {
+                type: 'bar',
+                data: {
+                    labels: ['Ovo', 'Larva', 'Pupa'],
+                    datasets: [{ label: 'Duração (dias)', data: [4, 5, 2], backgroundColor: '#2e7d64', borderRadius: 12 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+            });
+        }
+        
+        // EVENTOS + LOAD
+        function bindEvents(){
+            const sliders = [tempSlider, chuvaSlider, lixoSlider, prevSlider, larvSlider];
+            sliders.forEach(s => s.addEventListener('input', atualizarTudo));
+            document.getElementById('btnAlerta').addEventListener('click', gerarAlerta);
+        }
+        
+        window.onload = () => {
+            initGraficos();
+            bindEvents();
+            atualizarTudo();
+        };
+    })();
+</script>
+</body>
+</html>
